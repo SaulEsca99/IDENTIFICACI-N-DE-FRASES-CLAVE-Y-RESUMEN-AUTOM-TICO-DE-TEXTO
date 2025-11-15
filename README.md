@@ -1,109 +1,83 @@
-# 📊 PRÁCTICA 3: IMPLEMENTACIÓN Y EVALUACIÓN DE NAÏVE BAYES
+# 📊 PRÁCTICA 3: IDENTIFICACIÓN DE FRASES CLAVE Y RESUMEN AUTOMÁTICO DE TEXTO
 ## Tecnologías de Lenguaje Natural
 
 **Autor:** Escamilla Lazcano Saúl
 **Grupo:** 5BV1
 **Carrera:** Ingeniería En Inteligencia Artificial
 
-[![Python](https://img.shields.io/badge/Python-3.x-blue.svg)](https://www.python.org/)
-[![Pandas](https://img.shields.io/badge/Librería-Pandas-purple.svg)](https://pandas.pydata.org/)
+[![Python](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/)
 [![spaCy](https://img.shields.io/badge/Librería-spaCy-blue.svg)](https://spacy.io/)
 [![NLTK](https://img.shields.io/badge/Librería-NLTK-green.svg)](https://www.nltk.org/)
-[![Scikit-learn](https://img.shields.io/badge/Librería-Scikit--learn-orange.svg)](https://scikit-learn.org/)
-[![Seaborn](https://img.shields.io/badge/Librería-Seaborn%20%7C%20Matplotlib-blueviolet.svg)](https://seaborn.pydata.org/)
+[![Transformers](https://img.shields.io/badge/Librería-Transformers-yellow.svg)](https://huggingface.co/sentence-transformers)
+[![Scikit-Learn](https://img.shields.io/badge/Librería-Scikit--Learn-orange.svg)](https://scikit-learn.org/stable/)
 
-## 🚀 Descripción del Proyecto
+## 🚀 Descripción General del Proyecto
 
-Este proyecto es una implementación completa del algoritmo clasificador **Bayesiano Ingenuo (Naïve Bayes)** **desde cero** en Python. El objetivo es construir un modelo de **Análisis de Sentimiento** capaz de predecir si una reseña de película es "positiva" o "negativa" basándose únicamente en su contenido textual.
+Este proyecto es un análisis comparativo exhaustivo de **seis algoritmos de resumen automático extractivo**, desarrollado en un Jupyter Notebook. El objetivo es procesar las cuatro primeras cartas del libro "Frankenstein", aplicar cada algoritmo para extraer las 12 oraciones más representativas y, finalmente, realizar un análisis cuantitativo y cualitativo para determinar el "mejor" algoritmo según un balance de métricas.
 
-El *pipeline* del proyecto cubre todos los pasos esenciales de una tarea de PLN:
-1.  **Carga y Exploración de Datos** del dataset IMDB.
-2.  **Preprocesamiento y Normalización de Texto** avanzado usando `spaCy` y `NLTK`.
-3.  **Implementación del Modelo** (`NaiveBayesPersonalizado`) desde cero.
-4.  **Entrenamiento y Evaluación** del modelo con métricas de clasificación estándar.
-5.  **Visualización de Resultados**, incluyendo una matriz de confusión y nubes de palabras.
+El proyecto demuestra cinco competencias clave:
+1.  **Extracción de Texto:** Descarga y parseo del texto de "Frankenstein" desde *Project Gutenberg* usando expresiones regulares.
+2.  **Normalización Justificada:** Implementación de estrategias de pre-procesamiento personalizadas para cada algoritmo, justificando por qué un enfoque único no es adecuado.
+3.  **Implementación de Algoritmos:** Implementación desde cero (o con bibliotecas clave) de seis métodos de resumen: TF-IDF, Frecuencia, RAKE, TextRank, BERT y LSA.
+4.  **Análisis Cuantitativo:** Medición y visualización del tiempo de ejecución, la escalabilidad y la variabilidad del rendimiento de cada método.
+5.  **Análisis Cualitativo:** Evaluación de la calidad del resumen midiendo la similitud (solapamiento) entre las selecciones de oraciones y creando una rúbrica de evaluación multidimensional.
 
-## 💾 1. Dataset
+---
 
-El conjunto de datos utilizado es el **"IMDB Dataset of 50K Movie Reviews"**. Este es un corpus canónico para tareas de clasificación binaria de sentimiento.
-* **Archivo:** `IMDB Dataset.csv`
-* **Tamaño:** 50,000 reseñas.
-* **Clases:** "positiva" (25,000) y "negativa" (25,000).
+## 📂 1. Corpus de Datos
 
-## ⚙️ 2. Pipeline de Preprocesamiento de Texto
+* **Texto de entrada:** Las cuatro primeras cartas del libro "Frankenstein" (URL de Project Gutenberg: `pg84.txt`).
+* **Parámetro de resumen:** `n=12` oraciones para cada resumen.
+* **Módulos de procesamiento**: NLTK, `sklearn`, `sentence-transformers` (BERT), `networkx` (TextRank), y `rake-nltk`.
 
-Antes de entrenar, el texto crudo debe ser normalizado. Se implementaron dos métodos de normalización para comparar: *Stemming* (con `NLTK`) y *Lematización* (con `spaCy`).
+## 🔡 2. Normalización de Texto (Punto 2)
 
-Se seleccionó la **Lematización** para el pipeline final, ya que produce palabras léxicamente correctas (lemas), lo que es más preciso que las raíces generadas por el *stemming*.
+Un requisito clave fue **justificar** por qué se normaliza el texto de manera diferente para cada algoritmo. Aplicar una normalización única y agresiva (como quitar toda la puntuación) es beneficioso para algunos métodos, pero perjudicial para otros.
 
-El pipeline de normalización (`lematizar_texto`) incluye:
-1.  **Conversión a Minúsculas:** `texto.lower()`
-2.  **Eliminación de HTML:** Se usó `re` para eliminar etiquetas (ej. `<br />`).
-3.  **Tokenización (spaCy):** Se procesa el texto con el modelo `en_core_web_sm`.
-4.  **Eliminación de Stopwords y Puntuación:** Se filtran palabras comunes y signos de puntuación.
-5.  **Lematización (spaCy):** Cada token se reduce a su forma base de diccionario (ej. "running" → "run").
+| Algoritmo | Justificación de Normalización |
+| :--- | :--- |
+| **TF-IDF, Frecuencia, LSA, TextRank** | Se conserva la puntuación básica (`., !, ?`) para permitir que `sent_tokenize` de NLTK segmente las oraciones correctamente. El resto del ruido (símbolos, espacios extra) se elimina. LSA además requiere minúsculas (`.lower()`). |
+| **RAKE** | Se conserva **casi toda** la puntuación. RAKE (Rapid Automatic Keyword Extraction) la utiliza como delimitador para identificar frases clave, por lo que eliminarla rompería el algoritmo. |
+| **BERT** | **Normalización mínima**. Se conserva la puntuación, mayúsculas y subtítulos (`_..._`). BERT es un modelo contextual profundo que entiende el significado semántico del formato, por lo que eliminar esta información *empeoraría* sus resultados. |
 
-## 🧠 3. Implementación: Naïve Bayes desde Cero
+---
 
-El núcleo de la práctica es la clase `NaiveBayesPersonalizado`, que no utiliza las implementaciones de `sklearn` para el clasificador.
+## 🤖 3. Implementación de Algoritmos (Punto 3)
 
-### A. Entrenamiento (`fit`)
-El método `fit` aprende las probabilidades necesarias del corpus de entrenamiento (`X_train`, `y_train`).
+Se implementaron seis algoritmos extractivos. Todos seleccionan las 12 oraciones con mayor puntaje y las reordenan cronológicamente para mantener la coherencia.
 
-**1. Cálculo de Priors de Clase $P(c)$:**
-Calcula la probabilidad base de cada clase (positiva o negativa) en el dataset.
-$$ P(c) = \frac{\text{Documentos en la clase } c}{\text{Total de documentos}} $$
+| Algoritmo | Biblioteca/Módulo | Lógica de Puntuación (para una oración) |
+| :--- | :--- | :--- |
+| **TF-IDF** | `TfidfVectorizer` (sklearn) | Suma de los puntajes TF-IDF de todas las palabras que contiene. Importante si tiene palabras raras en el contexto global. |
+| **Frecuencia** | `CountVectorizer` / Manual | Promedio de la frecuencia normalizada de sus palabras (excluyendo *stopwords*). Importante si contiene palabras muy comunes. |
+| **RAKE** | `rake-nltk` | Suma de los puntajes RAKE de las frases clave que aparecen en ella. Importante si contiene muchas frases clave relevantes. |
+| **TextRank** | `networkx` / `TfidfVectorizer` | Aplicación de PageRank sobre un grafo donde las oraciones son nodos y las aristas son su similitud (TF-IDF). Importante si es similar a otras oraciones importantes. |
+| **BERT** | `SentenceTransformer` | Similitud coseno entre el vector de la oración y el vector del documento completo. Importante si su *significado semántico* es central al tema general. |
+| **LSA** | `TruncatedSVD` (sklearn) | Suma de la magnitud de sus componentes (tópicos) en la matriz SVD. Importante si está fuertemente conectada a los tópicos latentes del texto. |
 
-**2. Cálculo de Probabilidades Condicionales (Likelihoods) $P(w|c)$:**
-Calcula la probabilidad de que una palabra $w$ aparezca, dado que pertenece a una clase $c$.
+---
 
-* **Conteo de Palabras:** Se construye un vocabulario de frecuencia para cada clase.
-* **Suavizado de Laplace (Add-1):** Se aplica un suavizado (con $\alpha = 1$) para manejar palabras que aparecen en el set de prueba pero no en el de entrenamiento. Esto evita probabilidades de cero que anularían todo el cálculo.
+## 📈 4. Análisis y Conclusiones (Punto 4)
 
-La fórmula de probabilidad de una palabra con suavizado es:
-$$ P(w_i | c) = \frac{\text{frecuencia}(w_i, c) + \alpha}{\text{Total de palabras en } c + \alpha \cdot |V|} $$
-Donde $|V|$ es el tamaño del vocabulario global.
+El análisis se dividió en dos fases para obtener una conclusión integral:
 
-### B. Predicción (`predict`)
-El método `predict` clasifica nuevos documentos. Para evitar el **underflow numérico** (multiplicar muchas probabilidades pequeñas da como resultado cero), se utiliza la **suma de log-probabilidades**. El teorema de Bayes en su forma logarítmica es:
+### Análisis Cuantitativo (Rendimiento)
+* **Medición de Tiempos (Tabla 1, Figuras 1-4):** Se midió el tiempo de ejecución para cada carta.
+* **Hallazgo Clave:** Se identificaron tres niveles de velocidad. **BERT** (0.455s prom.) es masivamente más lento que los demás. **TF-IDF** (0.003s prom.) y **LSA** (0.004s) son los más rápidos. BERT fue **140 veces más lento** que TF-IDF.
+* **Escalabilidad:** El tiempo de BERT es variable y sensible a la longitud del texto, mientras que los métodos estadísticos mostraron un rendimiento casi constante.
 
-$$ c_{\text{pred}} = \underset{c}{\operatorname{argmax}} \left( \log(P(c)) + \sum_{i=1}^{n} \log(P(w_i | c)) \right) $$
+### Análisis Cualitativo (Calidad)
+* **Análisis de Características (Tabla 2):** Se verificó el éxito de la normalización (LSA fue el único en minúsculas, RAKE/BERT preservaron formato). También se demostró que `Frecuencia` tiende a seleccionar oraciones "basura" (cortas, como fechas).
+* **Análisis de Similitud (Tabla 3, Figura 5):** Un mapa de calor visualizó el solapamiento (% de oraciones en común).
+    * **TF-IDF y TextRank** mostraron una alta similitud (66.7%), ya que TextRank usó TF-IDF como base.
+    * **BERT** demostró ser una "isla" con baja similitud (ej. 14.6% con TF-IDF), probando que su lógica de selección (semántica) es fundamentalmente única.
 
-El modelo asigna la clase $c$ (positiva o negativa) que maximice esta suma.
+### Veredicto Final (Tabla 4, Figuras 6-7)
+No existe un "mejor" algoritmo; la elección depende de la prioridad:
 
-
-
-## 📊 4. Evaluación y Resultados
-
-El modelo se entrenó con el 80% de los datos y se evaluó con el 20% restante.
-
-### Métricas de Desempeño
-La evaluación (`sklearn.metrics`) arrojó un rendimiento excelente:
-
-* **Accuracy (Exactitud):** **~86.2%**
-* **Reporte de Clasificación:**
-    | Clase | Precision | Recall | F1-Score |
-    | :--- | :--- | :--- | :--- |
-    | Negativa | 0.86 | 0.87 | 0.86 |
-    | Positiva | 0.87 | 0.86 | 0.86 |
-
-### Matriz de Confusión
-La matriz de confusión (visualizada con `seaborn`) confirma el buen desempeño del modelo, mostrando una alta concentración de predicciones correctas en la diagonal principal.
-
-*(**Instrucción:** Sube tu imagen de la matriz de confusión al repositorio y nómbrala `matriz_confusion.png` para que aparezca aquí)*
-`![Matriz de Confusión](matriz_confusion.png)`
-
-### Nubes de Palabras
-Se generaron nubes de palabras (`wordcloud`) a partir de los vocabularios aprendidos por el modelo para cada clase, mostrando visualmente los términos más distintivos de cada sentimiento.
-
-*(**Instrucción:** Sube tus nubes de palabras y nómbralas como se sugiere)*
-| Nube de Palabras Positivas | Nube de Palabras Negativas |
-| :---: | :---: |
-| `![Nube de Palabras Positivas](wordcloud_positiva.png)` | `![Nube de Palabras Negativas](wordcloud_negativa.png)` |
-
-## 💡 Conclusión
-
-Esta práctica demostró con éxito la implementación de un clasificador Naïve Bayes Multinomial desde cero. Los resultados de exactitud (~86%) son muy buenos y demuestran la efectividad de este algoritmo para tareas de clasificación de texto. El uso de un pipeline de normalización robusto (especialmente la lematización) y técnicas como el suavizado de Laplace fueron cruciales para el rendimiento del modelo.
+* **🏆 Mejor Calidad Semántica:** **BERT**. Es el único que "entendió" la narrativa (la aparición de la criatura en la Carta 4), pero a un costo de rendimiento extremo.
+* **⚡ Mejor Velocidad y Eficiencia:** **TF-IDF**. Ideal para procesamiento masivo donde la velocidad es crítica.
+* **⚖️ Mejor "Todo-Terreno" (Balance):** **RAKE**. La evaluación multidimensional (Figura 6 y 7) lo clasificó en primer lugar (21/25), mostrando un perfil equilibrado de buena velocidad, alta coherencia y excelente preservación del formato.
 
 ---
 
@@ -114,9 +88,8 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
 ### Requisitos
 * Python 3.x
 * Jupyter (Lab o Notebook)
-* Las bibliotecas listadas en `requirements.txt`.
+* Las bibliotecas listadas en `requirements.txt`
 * El modelo de lenguaje `en_core_web_sm` de `spaCy`.
-* **Importante:** El archivo del dataset `IMDB Dataset.csv` debe estar en la misma carpeta.
 
 ### Pasos de Instalación
 
@@ -132,9 +105,15 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
     pip install -r requirements.txt
     ```
 
-3.  **Descargar el modelo de `spaCy`:**
+3.  **Descargar los modelos y datos necesarios:**
     ```bash
+    # Descargar modelo de spaCy
     python -m spacy download en_core_web_sm
+    
+    # Descargar paquetes de NLTK
+    python -m nltk.downloader punkt
+    python -m nltk.downloader stopwords
+    python -m nltk.downloader wordnet
     ```
 
 4.  **Iniciar Jupyter Lab:**
@@ -144,31 +123,7 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
 
 5.  Abrir el archivo `Practica3_EscamillaLazcanoSaul_5BV1.ipynb` y ejecutar las celdas.
 
-### 🐛 Solución de Errores Comunes
-
-**Error (el de tu imagen):** `ModuleNotFoundError: No module named 'wordcloud'`
-
-**Solución:** Este error significa que la biblioteca `wordcloud` no está instalada en tu entorno. Para arreglarlo:
-
-1.  Abre tu terminal.
-2.  Activa tu entorno de Conda (ej. `conda activate nlp_env`).
-3.  Ejecuta el siguiente comando:
-    ```bash
-    conda install -c conda-forge wordcloud
-    ```
-4.  **Reinicia el kernel** de tu Jupyter Notebook y vuelve a ejecutar las celdas.
-
 ---
 
 ## 📄 Contenido para `requirements.txt`
 (Crea un archivo `requirements.txt` y pega esto)
-```
-pandas
-numpy
-matplotlib
-seaborn
-wordcloud
-nltk
-spacy
-scikit-learn
-```
