@@ -1,4 +1,4 @@
-# 📊 PRÁCTICA 3: IMPLEMENTACIÓN Y EVALUACIÓN DE NAÏVE BAYES
+# 📊 PRÁCTICA 2: PIPELINE DE PLN Y VECTORIZACIÓN DE DOCUMENTOS
 ## Tecnologías de Lenguaje Natural
 
 **Autor:** Escamilla Lazcano Saúl
@@ -8,98 +8,101 @@
 [![spaCy](https://img.shields.io/badge/Librería-spaCy-blue.svg)](https://spacy.io/)
 [![NLTK](https://img.shields.io/badge/Librería-NLTK-green.svg)](https://www.nltk.org/)
 [![Pandas](https://img.shields.io/badge/Librería-Pandas-purple.svg)](https://pandas.pydata.org/)
-[![Scikit-learn](https://img.shields.io/badge/Librería-Scikit--learn-orange.svg)](https://scikit-learn.org/)
+[![Matplotlib](https://img.shields.io/badge/Librería-WordCloud%20%7C%20Matplotlib-orange.svg)](https://matplotlib.org/)
 
 ## 🚀 Descripción del Proyecto
 
-Este proyecto es una implementación completa del algoritmo **Clasificador Bayesiano Ingenuo (Naïve Bayes)** desde cero en Python, aplicado a un problema de **Análisis de Sentimiento**. El objetivo es predecir si una reseña de película es "positiva" o "negativa" basándose en su contenido textual.
+Este proyecto es un **pipeline completo de Procesamiento de Lenguaje Natural (PLN)** desarrollado en un Jupyter Notebook. El objetivo es tomar un corpus de texto crudo, aplicar un riguroso proceso de **normalización** para limpiarlo, y finalmente, **vectorizarlo** (convertirlo en números) usando cuatro técnicas fundamentales, incluyendo la implementación de **TF-IDF** desde cero.
 
-El proyecto abarca todo el pipeline de un proyecto de PLN:
-1.  **Carga y Exploración de Datos** del dataset IMDB.
-2.  **Preprocesamiento y Normalización de Texto** avanzado usando `spaCy` y `NLTK`.
-3.  **Implementación del Modelo** `NaiveBayesPersonalizado` desde cero.
-4.  **Entrenamiento y Evaluación** del modelo usando métricas estándar de clasificación.
-5.  **Visualización de Resultados**, incluyendo una matriz de confusión y nubes de palabras.
+Este cuaderno demuestra el flujo de trabajo esencial para preparar datos de texto para cualquier modelo de Machine Learning.
 
-## 💾 1. Dataset
+---
 
-El conjunto de datos utilizado es el **"IMDB Dataset of 50K Movie Reviews"**. Este es un corpus estándar para tareas de clasificación binaria de sentimiento.
-* **Tamaño:** 50,000 reseñas.
-* **Clases:** "positiva" (25,000) y "negativa" (25,000).
-* **Objetivo:** Clasificar el sentimiento de la reseña.
+## 📂 1. Corpus de Datos
 
-## ⚙️ 2. Pipeline de Preprocesamiento de Texto
+El proyecto utiliza un corpus personalizado de **10 documentos** en inglés.
+* **Tema:** "Líneas de Carrera en Automovilismo" (*Racing Lines*).
+* **Requisito:** Cada documento contiene más de 15 tokens para asegurar un análisis significativo.
 
-Antes de entrenar, el texto crudo debe ser normalizado. Se implementaron dos métodos de normalización para comparar: *Stemming* (con `NLTK`) y *Lematización* (con `spaCy`).
+---
 
-Se seleccionó la **Lematización** para el pipeline final, ya que produce palabras léxicamente correctas (lemas), lo que es más preciso que las raíces generadas por el *stemming*.
+## ⚙️ 2. Pipeline de Normalización de Texto (Puntos 1 y 2)
 
-El pipeline de normalización (`lematizar_texto`) incluye:
-1.  **Conversión a Minúsculas:** `texto.lower()`
-2.  **Eliminación de HTML:** Se usó `re` para eliminar etiquetas HTML (ej. `<br />`).
-3.  **Tokenización (spaCy):** Se procesa el texto con el modelo `en_core_web_sm`.
-4.  **Eliminación de Stopwords y Puntuación:** Se filtran palabras comunes y signos de puntuación.
-5.  **Lematización (spaCy):** Cada token se reduce a su forma base (ej. "running" → "run").
+El primer paso crítico en cualquier tarea de PLN es la **normalización** del texto. Este proceso limpia el "ruido" y estandariza las palabras para que el análisis sea coherente y preciso.
 
-## 🧠 3. ImplementACIÓN: Naïve Bayes desde Cero
+Se implementaron y compararon 7 técnicas de normalización diferentes:
 
-El núcleo de la práctica es la clase `NaiveBayesPersonalizado`, que no utiliza las implementaciones de `sklearn` para el clasificador.
+| Inciso | Proceso de Normalización |
+| :--- | :--- |
+| **a** | **Preprocesamiento Base** (Minúsculas, sin *stopwords* ni puntuación) |
+| **b** | Base (a) + **Lematización Simple** (con `spaCy`) |
+| **c** | Base (a) + **Stemming Simple** (con `NLTK SnowballStemmer`) |
+| **d** | Base (a) → Lematización → Stemming |
+| **e** | Base (a) → Stemming → Lematización |
+| **f** | Base (a) + **POS-Tagging** → Lematización (con `spaCy`) |
+| **g** | Base (a) + **POS-Tagging** → Stemming (con `NLTK`) |
 
-### A. Entrenamiento (`fit`)
+### 🔬 Justificación de la Normalización (Punto 2)
 
-El método `fit` aprende las probabilidades necesarias del corpus de entrenamiento.
+Para los pasos siguientes, se seleccionó el **inciso (b) Lematización Simple** como el método de normalización definitivo.
 
-**1. Cálculo de Priors de Clase $P(c)$:**
-Se calcula la probabilidad de que un documento pertenezca a una clase (positiva o negativa) sin ver el texto.
-$$ P(c) = \frac{\text{Documentos en la clase } c}{\text{Total de documentos}} $$
+**Justificación:**
+* **Preservación del Significado:** A diferencia del **Stemming** (ej. `competitive` → `competit`), que simplemente "corta" las palabras, la **Lematización** las reduce a su forma base de diccionario (lema), que es una palabra real con significado (ej. `finding` → `find`). Esto es crucial para un análisis semántico preciso.
+* **Evita la Sobre-reducción:** Los procesos combinados ('d' y 'e') demostraron ser redundantes, ya que el *stemming* (la operación más agresiva) anula el beneficio de la lematización.
+* **Eficiencia:** El lematizador de `spaCy` (usado en 'b') ya es contextual y utiliza información de **POS-Tagging** de forma inherente, haciendo que el paso explícito ('f') sea innecesario para este caso de uso.
 
-**2. Cálculo de Probabilidades de Palabras (Likelihoods) $P(w|c)$:**
-Se calcula la probabilidad de que una palabra $w$ aparezca, dado que pertenece a una clase $c$.
+---
 
-* **Conteo de Palabras:** Se construye un vocabulario de frecuencia para cada clase.
-* **Suavizado de Laplace (Add-1):** Para manejar palabras que no se vieron en el entrenamiento (y evitar probabilidades de cero), se aplica el suavizado de Laplace ($ \alpha = 1 $).
+## ☁️ 3. Nube de Palabras (Punto 3)
 
-La fórmula para la probabilidad de una palabra con suavizado es:
-$$ P(w_i | c) = \frac{\text{frecuencia}(w_i, c) + \alpha}{\text{Total de palabras en } c + \alpha \cdot |V|} $$
-Donde $|V|$ es el tamaño del vocabulario global.
+Para validar visualmente la efectividad de nuestra normalización, se generó una **Nube de Palabras** (`WordCloud`) a partir del corpus lematizado.
 
-### B. Predicción (`predict`)
+Esta visualización confirma que el ruido (como "the", "a", "is") ha sido eliminado, y los términos más frecuentes son ahora los semánticamente relevantes para el tema.
 
-El método `predict` clasifica nuevos documentos. Para evitar el *underflow* numérico (multiplicar muchas probabilidades pequeñas), se utiliza la suma de **log-probabilidades**:
+**Top 10 Términos del Corpus Lematizado:**
+1.  `racing` (13)
+2.  `line` (12)
+3.  `car` (9)
+4.  `track` (8)
+... y más.
 
-$$ c_{\text{pred}} = \underset{c}{\operatorname{argmax}} \left( \log(P(c)) + \sum_{i=1}^{n} \log(P(w_i | c)) \right) $$
+*(Añade aquí el screenshot de tu nube de palabras)*
+`![Nube de Palabras del Corpus 'Racing Lines'](wordcloud_racing_lines.png)`
 
-El documento se asigna a la clase $c$ que maximice esta suma.
+---
 
-## 📊 4. Evaluación y Resultados
+## 🔢 4. Vectorización de Documentos (Punto 4)
 
-El modelo se entrenó con el 80% del dataset y se evaluó con el 20% restante.
+Este es el objetivo principal: transformar los 10 documentos de texto limpio en **vectores numéricos** para que puedan ser entendidos por un algoritmo. Se implementaron 4 técnicas clave sobre un **vocabulario global de 144 términos**.
 
-### Métricas de Desempeño
-La evaluación (`sklearn.metrics`) arrojó excelentes resultados:
+### a) One-Hot Encoding (Presencia de Término)
+El método más simple. Es un vector binario (0s y 1s) donde cada índice corresponde a una palabra del vocabulario.
+* **1** = la palabra **está presente** en el documento.
+* **0** = la palabra **no está presente**.
+* **Limitación:** Pierde toda la información de frecuencia. `car` apareciendo 1 vez o 10 veces da el mismo resultado (1).
 
-* **Accuracy (Exactitud):** ~86.2%
-* **Reporte de Clasificación:**
-    | Clase | Precision | Recall | F1-Score |
-    | :--- | :--- | :--- | :--- |
-    | Negativa | 0.86 | 0.87 | 0.86 |
-    | Positiva | 0.87 | 0.86 | 0.86 |
+### b) Conteo de Términos (Bolsa de Palabras / Bag of Words)
+Este vector almacena el **conteo de frecuencia** de cada palabra del vocabulario en el documento.
+* *Ejemplo:* Si `car` aparece 3 veces en `doc_06`, el valor en ese índice será `3`.
+* **Limitación:** Da demasiado peso a palabras que son muy comunes en *todos* los documentos (como `car` en este corpus), sesgando su importancia.
 
-### Matriz de Confusión
-La matriz de confusión (visualizada con `seaborn`) muestra cómo se distribuyeron las predicciones correctas e incorrectas.
+### c) Probabilidad del Término (P(t))
+Esta técnica crea un **único vector global** que describe la distribución de probabilidad de los términos en todo el corpus.
+* **Fórmula:** $ P(t) = \frac{\text{Frecuencia de } t \text{ en todo el corpus}}{\text{Total de términos en el corpus}} $
+* **Uso:** No se usa para representar documentos individuales, sino para entender la composición del corpus en su conjunto.
+
+### d) TF-IDF (Frecuencia de Término–Frecuencia Inversa de Documento)
+Es el método más robusto para ponderar la importancia de un término. Implementado desde cero, su lógica es: **"Un término es importante si es frecuente en *un* documento pero raro en *todos los demás*."**
 
 
 
-### Nubes de Palabras
-Se generaron nubes de palabras (`wordcloud`) a partir del vocabulario aprendido por el modelo para las clases "positiva" y "negativa", mostrando los términos más distintivos de cada sentimiento.
+El puntaje se calcula en dos partes:
+1.  **TF (Term Frequency):** Mide la importancia local de un término en un documento.
+    * $ TF(t, d) = \frac{\text{Nº de veces que } t \text{ aparece en } d}{\text{Total de términos en } d} $
+2.  **IDF (Inverse Document Frequency):** Mide la rareza del término en todo el corpus.
+    * $ IDF(t) = \log\left(\frac{\text{Total de documentos}}{\text{Nº de documentos que contienen } t}\right) $
 
-| Nube Positiva | Nube Negativa |
-| :---: | :---: |
-|  |  |
-
-## 💡 Conclusión
-
-Esta práctica demostró con éxito la implementación de un clasificador Naïve Bayes Multinomial desde cero. Los resultados de exactitud (~86%) son muy buenos y demuestran la efectividad de este algoritmo para tareas de clasificación de texto. El uso de un pipeline de normalización robusto (especialmente la lematización) y técnicas como el suavizado de Laplace fueron cruciales para el rendimiento del modelo.
+El puntaje final, **TF-IDF = TF \* IDF**, penaliza palabras comunes (como `car`) dándoles un IDF bajo, y recompensa palabras específicas (como `optimal` o `bezier`) con un IDF alto. Esto proporciona una representación numérica mucho más significativa de la "firma" semántica de cada documento.
 
 ---
 
@@ -110,9 +113,8 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
 ### Requisitos
 * Python 3.x
 * Jupyter (Lab o Notebook)
-* Las bibliotecas listadas en `requirements.txt`
+* Las bibliotecas listadas en `requirements.txt`.
 * El modelo de lenguaje `en_core_web_sm` de `spaCy`.
-* El dataset `IMDB Dataset.csv` (no incluido en este repo, debe ser descargado).
 
 ### Pasos de Instalación
 
@@ -128,7 +130,7 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
     pip install -r requirements.txt
     ```
 
-3.  **Descargar el modelo de `spaCy`:**
+3.  **Descargar el modelo de `spaCy` (¡Importante!):**
     ```bash
     python -m spacy download en_core_web_sm
     ```
@@ -145,12 +147,9 @@ Este proyecto es un Jupyter Notebook (`.ipynb`) y requiere un entorno compatible
 ## 📄 Contenido para `requirements.txt`
 (Crea un archivo `requirements.txt` y pega esto)
 ```
-pandas
-numpy
-matplotlib
-seaborn
-wordcloud
-nltk
 spacy
-scikit-learn
+nltk
+pandas
+matplotlib
+wordcloud
 ```
